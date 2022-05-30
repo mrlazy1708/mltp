@@ -61,8 +61,8 @@ class Conv2d(nn.Module):
         B, _, H, W = inputs.shape
 
         x = F.unfold(inputs, self.kernel_size, self.dilation, self.padding, self.stride)
-        x = x.transpose(1, 2).unsqueeze(1)                  # Batch x 1   x H*W x In*Ker^2
-        w = self.weights.view(1, self.out_channels, 1, -1)  # 1     x Out x 1   x In*Ker^2
+        x = x.transpose(1, 2).unsqueeze(1)              # Batch x 1   x H*W x In*Ker^2
+        w = self.weights.flatten(-3)[None, :, None, :]  # 1     x Out x 1   x In*Ker^2
 
         from .core import dist
         y = dist(x, w, p=p)
