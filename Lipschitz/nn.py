@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .core import norm, dist
-
 class Linear(nn.Module):
     def __init__(self, in_features, out_features, p=None):
         super().__init__()
@@ -14,13 +12,12 @@ class Linear(nn.Module):
         self.weights = nn.Parameter(torch.Tensor(out_features, in_features))
         with torch.no_grad():
             nn.init.normal_(self.weights)
-            if p is not None:
-                torch.div_(self.weights, norm(self.weights.flatten(), p))
 
     def forward(self, inputs, p=None):
         x = inputs.unsqueeze(1)         # Batch x 1   x In
         w = self.weights.unsqueeze(0)   # 1     x Out x In
 
+        from .core import dist
         return dist(x, w, self.p if p is None else p)
 
 class Conv2d(nn.Module):

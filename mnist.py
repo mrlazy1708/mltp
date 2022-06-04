@@ -98,8 +98,15 @@ p=float(sys.argv[1])).to(device)
 optmz = torch.optim.Adam(net.parameters(), 1e-3)
 crtrn = torch.nn.CrossEntropyLoss()
 
+loss_list, accu_list = [], []
 for epoch in range(32):
     loss = train(net, optmz, crtrn, dataloader)
     accu = eval(net, dataloader)
 
-    print(f'Epoch {epoch+1} average loss: {loss}, accuracy: {accu}')
+    print(f'[{sys.argv[1]}] Epoch {epoch+1} average loss: {loss}, accuracy: {accu}')
+    loss_list.append('{:12.6f}'.format(loss))
+    accu_list.append('{:12.6f}'.format(accu))
+
+with open(f'mnist.{sys.argv[1]}.txt', 'w') as output:
+    output.write(', '.join(loss_list) + '\n')
+    output.write(', '.join(accu_list) + '\n')
