@@ -1,18 +1,17 @@
 import torch
 
-### Lp distance of the last dimension
-def dist(x, w, p=torch.inf):
-    y = torch.abs(x - w)
-    # with torch.no_grad():
-    #     from torch.linalg import vector_norm as norm
-    #     n = norm(y, dim=2, ord=torch.inf).unsqueeze(-1)
-    # y = norm(y / n, dim=2, ord=p)
-
+### Lp norm of v's last dimension
+def norm(v, p):
     if p == torch.inf:
-        y = torch.max(y, dim=-1)
-        return y.values  # value
+        v = torch.max(v, dim=-1)
+        return v.values
 
     else:
-        y = torch.pow(y, p)
-        y = torch.sum(y, dim=-1)
-        return y.pow(1 / p)
+        v = torch.pow(v, p)
+        v = torch.sum(v, dim=-1)
+        return v.pow(1 / p)
+
+
+### Lp distance of the last dimension
+def dist(x, w, p):
+    return norm(torch.abs(x * w), p)
