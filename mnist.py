@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataset = MNIST(root='/code/data/MNIST', download=True, train=True, transform=transforms.Compose([transforms.ToTensor()]))
-dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=512, shuffle=True)
 
 # ---------------------------------------------------------------------------- #
 #                            TRAINING AND EVALUATION                           #
