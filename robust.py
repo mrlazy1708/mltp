@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataset = MNIST(root='/code/data/MNIST', download=True, train=True, transform=transforms.Compose([transforms.ToTensor()]))
-dataloader = DataLoader(dataset, batch_size=512, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
 
 # ---------------------------------------------------------------------------- #
 #                            TRAINING AND EVALUATION                           #
@@ -42,22 +42,26 @@ def train(model, optmz, crtrn, dl, **args):
     return loss
 
 @torch.no_grad()
-def eval(model, dl, **args):
+def eval(model, epsln, dl, **args):
     model.eval()
 
-    total, n_correct = 0, 0
+    total, n_correct, n_certify = 0, 0, 0
     for images, labels in tqdm(dl):
         images = images.to(device)
         labels = labels.to(device)
 
         output = model.forward(images, **args).squeeze()
+        output = model(images).squeeze()
         predic = torch.max(output, dim=1)
+        second = torch.kthvalue(output, 9, dim=1)
         correct = predic.indices == labels
+        certify = correct.logical_and(predic.values - second.values > epsln * 2)
 
         total += labels.size(0)
         n_correct += correct.sum().item()
+        n_certify += certify.sum().item()
 
-    return n_correct / total
+    return n_correct / total, n_certify / total
 
 # ---------------------------------------------------------------------------- #
 #                                     MODEL                                    #
@@ -85,9 +89,8 @@ class MLP(nn.Module):
 net = MLP(
 
     nn.Flatten(),
-    Ln.Linear(28*28, 256),
-    Ln.Linear(256, 64),
-    Ln.Linear(64, 10),
+    Ln.Linear(28*28, 2048),
+    Ln.Linear(2048, 10),
 
 p=float(sys.argv[1])).to(device)
 
@@ -95,18 +98,21 @@ p=float(sys.argv[1])).to(device)
 #                                      RUN                                     #
 # ---------------------------------------------------------------------------- #
 
+epsln = 8/255
 optmz = torch.optim.Adam(net.parameters(), 1e-3)
 crtrn = torch.nn.CrossEntropyLoss()
 
-loss_list, accu_list = [], []
+loss_list, accu_list, cert_list = [], [], []
 for epoch in range(20):
     loss = train(net, optmz, crtrn, dataloader)
-    accu = eval(net, dataloader)
+    accu, cert = eval(net, epsln, dataloader)
 
-    print(f'[{sys.argv[1]}] Epoch {epoch+1} average loss: {loss}, accuracy: {accu}')
+    print(f'Epoch {epoch+1} average loss: {loss}, accuracy(certified): {accu}({cert})')
     loss_list.append('{:12.6f}'.format(loss))
     accu_list.append('{:12.6f}'.format(accu))
+    cert_list.append('{:12.6f}'.format(cert))
 
-with open(f'mnist.{sys.argv[1]}.txt', 'w') as output:
+with open(f'mnist.robust.txt', 'w') as output:
     output.write(', '.join(loss_list) + '\n')
     output.write(', '.join(accu_list) + '\n')
+    output.write(', '.join(cert_list) + '\n')

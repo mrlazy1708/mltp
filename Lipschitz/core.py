@@ -9,9 +9,11 @@ def norm(v, p):
     else:
         v = torch.pow(v, p)
         v = torch.sum(v, dim=-1)
-        return v.pow(1 / p)
+        return  v.pow(1/ p)
 
 
-### Lp distance of the last dimension
-def dist(x, w, p):
-    return norm(torch.abs(x * w), p)
+### Lp-Neuron output on the last two dimensions
+def Lp(x, w, p):
+    with torch.no_grad():
+        w_lp = norm(torch.abs(w.flatten(-2)), p)
+    return norm(torch.abs(x * w), p) / w_lp.unsqueeze(-1)

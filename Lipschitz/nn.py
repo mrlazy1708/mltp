@@ -17,8 +17,8 @@ class Linear(nn.Module):
         x = inputs.unsqueeze(1)         # Batch x 1   x In
         w = self.weights.unsqueeze(0)   # 1     x Out x In
 
-        from .core import dist
-        return dist(x, w, self.p if p is None else p)
+        from .core import Lp
+        return Lp(x, w, self.p if p is None else p)
 
 class Conv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, p=None):
@@ -42,8 +42,8 @@ class Conv2d(nn.Module):
         x = x.transpose(1, 2).unsqueeze(1)              # Batch x 1   x H*W x In*Ker^2
         w = self.weights.flatten(-3)[None, :, None, :]  # 1     x Out x 1   x In*Ker^2
 
-        from .core import dist
-        y = dist(x, w, self.p if p is None else p)
+        from .core import Lp
+        y = Lp(x, w, self.p if p is None else p)
 
         return y.view(B, -1,
             (H + 2 * self.padding - self.kernel_size) // self.stride + 1,
